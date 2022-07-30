@@ -1,8 +1,11 @@
 const express = require('express')
+const cors = require('cors')
+
 const app = express()
-var morgan = require('morgan')
-//let bd = require('./db.json')
 app.use(express.json())
+app.use(cors())
+
+
 let people = [
     {
         id: 1,
