@@ -1,10 +1,10 @@
 GET http://localhost:3001/api/guiatelefonica
 
 ###
-GET http://localhost:3001/api/guiatelefonica/1
+GET http://localhost:3001/api/guiatelefonica/62e6ff30f9bf9f96fb4d5689
 
 ###
 GET http://localhost:3001/info
 
 ###
-DELETE http://localhost:3001/api/guiatelefonica
+DELETE http://localhost:3001/api/guiatelefonica/62e6ff30f9bf9f96fb4d5689

@@ -1,23 +1,16 @@
 const express = require('express')
 const cors = require('cors')
-
+require('dotenv').config()
+require('./data/mongo')
 const app = express()
 app.use(express.json())
 app.use(cors())
 
+const newgente = require('./models/newperson')
 
-let people = [
-    {
-        id: 1,
-        nombre: "Yasmany",
-        telefono: "4029402395"
-    },
-    {
-        id: 2,
-        nombre: "Lazara",
-        telefono: "4029405858"
-    }
-]
+
+
+
 
 app.get('/info', (request, response) => {
   response.send(`<h1>Phonebook has info for ${people.length} people</h1><p>${new Date()}</p>`)
@@ -25,7 +18,9 @@ app.get('/info', (request, response) => {
 
 //get all records
 app.get('/api/guiatelefonica', (request, response) => {
-  response.json(people)
+  newgente.find({}).then( people => {
+    response.json(people)
+  })
 })
 //function to create the id
 const generateId = () => {
@@ -36,7 +31,7 @@ const generateId = () => {
   }
 
 //create a new record
-app.post('/api/telefono', (request, response) => {    
+app.post('/api/telefono', (request, response, next) => {    
     const body = request.body
     //console.log(request.body)
     if (!body) {
@@ -44,40 +39,70 @@ app.post('/api/telefono', (request, response) => {
           error: 'content missing' 
         })
       }
-    
-      const recordperson = {
+      const persona = new newgente({
         name: body.name,
-        telefono: body.telefono,
-        id: generateId()
-      }
+        telefono: body.telefono
 
-      people = people.concat(recordperson)
-    response.json(recordperson)
+      })
+
+      persona.save().then(result => {
+        response.json(result)
+      })
     
   })
 
   //get a record
-  app.get('/api/guiatelefonica/:id', (request, response) => {
+  app.get('/api/guiatelefonica/:id', (request, response, next) => {
     
-    const id = Number(request.params.id)
-    const person = people.find(p => p.id === id)
-    //console.log(person)
-    if(person)
-    {
-        response.json(person)
-    }else
-    {
+    const id = request.params.id
+    
+    newgente.findById(id)
+    .then(result => {
+      if(result)
+        response.json(result)
+      else
         response.status(404).end()
-    }
+    })
+    .catch(error => next(error))
 })
 
 //delete a record
 app.delete('/api/guiatelefonica/:id', (request, response) => {
-    const id = Number(request.params.id)
-    person = people.filter(p => p.id !== id)
-    console.log(person)
-    response.status(204).end()
+    const id = request.params.id
+    newgente.findByIdAndRemove(id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
   })
+
+  const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+  
+    if (error.name === 'CastError') {
+      return response.status(400).send({ error: 'malformatted id' })
+    } 
+  
+    next(error)
+  }
+
+  app.put('/api/telefono/:id', (request, response, next) => {
+    const body = request.body
+  
+    const person = {
+      name: body.name,
+      telefono: body.telefono,
+    }
+    console.log(person)
+   
+    newgente.findByIdAndUpdate(request.params.id, person, { new: true })
+      .then(updatedPerson => {
+        response.json(updatedPerson)
+      })
+      .catch(error => next(error))
+  })
+  
+  app.use(errorHandler)
  
   const unknownEndpoint = (request, response) => {
     response.status(404).send({ error: 'unknown endpoint' })
@@ -87,7 +112,7 @@ app.delete('/api/guiatelefonica/:id', (request, response) => {
 
  
 
-const PORT = 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
